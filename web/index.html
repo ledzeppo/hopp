@@ -172,6 +172,7 @@ function made(design, bp) { return S.items.some(i => i.key === design + '|' + bp
 async function writeListings() {
   const designs = [...selDesigns], bps = [...selProducts];
   if (!designs.length || !bps.length) return toast('Tick at least one design and one product.');
+  if (S.ai_enabled && !S.anthropic_key) return toast('No Anthropic key yet. Click Settings (top right) and paste it, then try again. Without it you only get plain templates.');
   $('writeBtn').disabled = true; review = []; $('review').replaceChildren(); $('createRow').hidden = true;
   let done = 0;
   for (const d of designs) {
