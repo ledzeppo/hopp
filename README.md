@@ -4,8 +4,17 @@ Drop PNG designs into `designs/` and `printify_bulk.py` creates one Printify pro
 design for each blueprint in `config.json` (2 tees, sweatshirt, hoodie, mug, tumbler, poster, canvas, phone
 case, sticker, magnet, doormat, mouse pad, blanket, pillow, coaster, tote). Prices are 2x Printify's cost, rounded up to the next `$x.99`.
 
+## AI-written SEO copy
+For every design Claude looks at the image and writes, per product, an SEO title, HTML
+description, tags, image alt text, meta title and meta description. The title, description and
+tags go to Printify/Shopify; the meta title, meta description and alt text are saved in
+`state.json` (Printify cannot set Shopify's SEO fields, so apply those after publishing).
+Settings are in the `ai` block of `config.json` (model, store name, tone, audience). Results
+are cached in `copy_cache.json`, so re-runs don't cost anything. Use `--no-ai` for the plain
+templates. Needs `pip install -r requirements.txt` and `ANTHROPIC_API_KEY` in `.env`.
+
 ## Setup
-1. Copy `.env.example` to `.env` and put your Printify token in it (`.env` is gitignored).
+1. Copy `.env.example` to `.env` and put your Printify and Anthropic keys in it (`.env` is gitignored).
 2. Put PNGs in `designs/`. The file name becomes the product title (`sunset_wave.png` -> "Sunset Wave").
    Use large, transparent-background PNGs (4000px+ on the long side is ideal).
 

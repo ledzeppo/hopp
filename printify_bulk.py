@@ -113,6 +113,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="show what would be created, change nothing")
     ap.add_argument("--limit", type=int, help="only process the first N designs")
     ap.add_argument("--only", help="comma-separated blueprint ids to process")
+    ap.add_argument("--no-ai", action="store_true", help="use the plain templates instead of Claude-written SEO copy")
     ap.add_argument("--publish", action="store_true", help="publish created products to Shopify")
     args = ap.parse_args()
 
@@ -132,6 +133,13 @@ def main():
         if len(shops) != 1:
             sys.exit("Multiple shops found; set PRINTIFY_SHOP_ID: " + ", ".join(f"{s['id']}={s['title']}" for s in shops))
         shop_id = str(shops[0]["id"])
+
+    ai_cfg = cfg.get("ai", {})
+    use_ai = ai_cfg.get("enabled") and not args.no_ai
+    if use_ai and not os.environ.get("ANTHROPIC_API_KEY"):
+        sys.exit("AI copy is enabled but ANTHROPIC_API_KEY is not set (or run with --no-ai)")
+    if use_ai:
+        from ai_copy import generate_copy
 
     st = load_state()
     cap = cfg["max_variants_per_product"]
@@ -155,12 +163,20 @@ def main():
             image_id = up["id"]
             st["uploads"][f.name] = {"id": image_id}
             save_state(st)
+        copy = {}
+        todo = [p for p in prods if f"{f.name}|{p['blueprint_id']}" not in st["products"]]
+        if use_ai and todo:
+            print(f"Writing SEO copy for {f.name} with Claude")
+            analysis, copy = generate_copy(f, prods, ai_cfg)
+            design = analysis["name"].strip().title() or design
+            print(f"  seen: {analysis['subject']} ({analysis['style']})")
         for p in prods:
             skey = f"{f.name}|{p['blueprint_id']}"
             if skey in st["products"]:
                 continue
+            c = copy.get(p["blueprint_id"])
             variants = catalog[(p["blueprint_id"], p["provider_id"])]
-            title = cfg["title_template"].format(design=design, product=p["name"])
+            title = c["title"] if c else cfg["title_template"].format(design=design, product=p["name"])
             if args.dry_run:
                 print(f"[dry-run] {title} ({len(variants)} variants)")
                 continue
@@ -169,9 +185,9 @@ def main():
                 used = [i for a in areas for i in a["variant_ids"]]
                 body = {
                     "title": title,
-                    "description": cfg["description_template"].format(design=design, product=p["name"]),
+                    "description": c["description_html"] if c else cfg["description_template"].format(design=design, product=p["name"]),
                     "blueprint_id": p["blueprint_id"], "print_provider_id": p["provider_id"],
-                    "tags": cfg["common_tags"] + p.get("tags", []) + [design],
+                    "tags": list(dict.fromkeys(cfg["common_tags"] + p.get("tags", []) + (c["tags"] if c else [design])))[:20],
                     "variants": [{"id": i, "price": 1999, "is_enabled": True} for i in used],
                     "print_areas": areas,
                 }
@@ -187,6 +203,9 @@ def main():
                 print(f"FAILED {title}: {e}")
                 continue
             st["products"][skey] = {"id": prod["id"], "title": title, "published": False}
+            if c:
+                st["products"][skey].update(meta_title=c["meta_title"], meta_description=c["meta_description"],
+                                            image_alt=c["image_alt"])
             save_state(st)
             created += 1
             print(f"Created {title} -> {prod['id']}")
