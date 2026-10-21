@@ -9,6 +9,7 @@ import base64
 import json
 import os
 import re
+import ssl
 import struct
 import sys
 import time
@@ -16,7 +17,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+from paths import DATA as ROOT, FROZEN
 API = "https://api.printify.com/v1"
 STATE_FILE = ROOT / "state.json"
 
@@ -31,6 +32,14 @@ def load_env():
                 os.environ.setdefault(k.strip(), v.strip())
 
 
+def _ssl_context():
+    ctx = ssl.create_default_context()
+    if FROZEN and not os.environ.get("SSL_CERT_FILE"):  # packaged apps can't rely on the OS certificate paths
+        import certifi
+        ctx.load_verify_locations(certifi.where())
+    return ctx
+
+
 def call(method, path, body=None, retries=6):
     data = json.dumps(body).encode() if body is not None else None
     for attempt in range(retries):
@@ -39,7 +48,7 @@ def call(method, path, body=None, retries=6):
             headers={"Authorization": "Bearer " + os.environ["PRINTIFY_TOKEN"],
                      "Content-Type": "application/json", "User-Agent": "hopp-bulk"})
         try:
-            with urllib.request.urlopen(req, timeout=120) as r:
+            with urllib.request.urlopen(req, timeout=120, context=_ssl_context()) as r:
                 raw = r.read()
                 return json.loads(raw) if raw else {}
         except urllib.error.HTTPError as e:

@@ -7,7 +7,9 @@ from pathlib import Path
 
 from PIL import Image
 
-CACHE_FILE = Path(__file__).parent / "copy_cache.json"
+from paths import DATA
+
+CACHE_FILE = DATA / "copy_cache.json"
 PROMPT_VERSION = "2"
 LIMITS = {"title": 80, "meta_title": 60, "meta_description": 160, "image_alt": 125}
 

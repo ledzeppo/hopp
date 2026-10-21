@@ -1,6 +1,13 @@
 # hopp: bulk Printify products from a folder of PNGs
 
-## Easiest way: the web interface
+## No Python needed: download the app
+Open the repository's **Actions** tab, click the latest "Build downloadable apps" run, and
+download **Hopp-Windows** (Hopp.exe) or **Hopp-Mac** (Hopp.command, zipped) from Artifacts.
+Double-click it; your browser opens. Windows shows a "protected your PC" warning the first time
+(More info, then Run anyway). On Mac, right-click the file and choose Open the first time. The app is for
+Apple Silicon Macs. Your designs, keys and settings are kept in a `Hopp` folder in your home folder.
+
+## Easiest way from source: the web interface
 Windows: double-click `start.bat`. Mac: double-click `start.command` (first time: right-click, Open).
 Linux: `./start.command`. Your browser opens at http://127.0.0.1:8765. You need Python 3.10+ installed.
 1. Click **Settings** and paste your Printify token and Anthropic key (saved only in `.env` on your computer).

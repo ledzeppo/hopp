@@ -1,0 +1,49 @@
+name: Build downloadable apps
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/magical-feynman-yqcccc]
+    paths: ["*.py", "web/**", "config.json", "requirements.txt", ".github/workflows/build.yml"]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: Hopp-Windows
+            sep: ";"
+          - os: macos-latest
+            name: Hopp-Mac
+            sep: ":"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pyinstaller certifi
+      - name: Build
+        shell: bash
+        run: |
+          pyinstaller --noconfirm --onefile --name Hopp --paths . \
+            --add-data "web${{ matrix.sep }}web" --add-data "config.json${{ matrix.sep }}." \
+            --collect-all anthropic --hidden-import certifi --hidden-import PIL app.py
+      - name: Package (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          mv dist/Hopp dist/Hopp.command
+          chmod +x dist/Hopp.command
+          ditto -c -k --keepParent dist/Hopp.command dist/Hopp-Mac.zip
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: ${{ matrix.name }}
+          path: dist/Hopp.exe
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: ${{ matrix.name }}
+          path: dist/Hopp-Mac.zip

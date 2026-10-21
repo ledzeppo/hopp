@@ -11,12 +11,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
+import ai_copy  # noqa: F401  (imported here so packaged builds include it)
 import printify_bulk as pb
 
-ROOT = Path(__file__).parent
+from paths import BUNDLE, DATA as ROOT
+
 DESIGNS = ROOT / "designs"
 THUMBS = DESIGNS / ".thumbs"
-WEB = ROOT / "web"
+WEB = BUNDLE / "web"
 PORT = int(os.environ.get("HOPP_PORT", "8765"))
 LOCK = threading.Lock()
 VARIANTS = {}  # (blueprint, provider) -> selected variants, cached per run
@@ -289,7 +291,9 @@ def main():
     pb.load_env()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     url = f"http://127.0.0.1:{PORT}"
-    print(f"Hopp is running at {url}  (press Ctrl+C to stop)")
+    print(f"Hopp is running at {url}")
+    print(f"Your files are in {ROOT}")
+    print("Keep this window open while you use Hopp. Close it to quit.")
     if "--no-browser" not in sys.argv:
         threading.Timer(0.7, lambda: webbrowser.open(url)).start()
     try:
