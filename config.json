@@ -229,7 +229,7 @@
   ],
   "ai": {
     "enabled": true,
-    "model": "claude-opus-5-5",
+    "model": "claude-haiku-5-5",
     "effort": "low",
     "store_name": "",
     "tone": "friendly and concise",
