@@ -4,27 +4,227 @@
   "max_variants_per_product": 100,
   "title_template": "{design} {product}",
   "description_template": "<p><strong>{design}</strong> on a {product}.</p><p>Printed on demand and shipped to you. Made to order, so please allow a few days for production.</p>",
-  "common_tags": ["gift", "print on demand"],
+  "common_tags": [
+    "gift",
+    "print on demand"
+  ],
   "products": [
-    {"blueprint_id": 6,   "provider_id": 99, "name": "Heavy Cotton Tee",    "tags": ["t-shirt", "tee"],
-     "filters": {"color": ["Black", "White", "Navy", "Sport Grey", "Dark Heather", "Red", "Forest Green", "Sand"]}},
-    {"blueprint_id": 12,  "provider_id": 99, "name": "Premium Jersey Tee",  "tags": ["t-shirt", "tee"],
-     "filters": {"color": ["Black", "White", "Navy", "Heather Grey", "Athletic Heather", "Red", "Heather Navy"]}},
-    {"blueprint_id": 145, "provider_id": 99, "name": "Softstyle Tee",       "tags": ["t-shirt", "tee"],
-     "filters": {"color": ["Black", "White", "Navy", "Sport Grey", "Charcoal", "Red"]}},
-    {"blueprint_id": 706, "provider_id": 99, "name": "Garment-Dyed Tee",    "tags": ["t-shirt", "comfort colors"],
-     "filters": {"color": ["Black", "White", "Pepper", "Blue Jean", "Grey", "Ivory"]}},
-    {"blueprint_id": 49,  "provider_id": 99, "name": "Crewneck Sweatshirt", "tags": ["sweatshirt"],
-     "filters": {"color": ["Black", "White", "Navy", "Sport Grey", "Dark Heather", "Red"]}},
-    {"blueprint_id": 77,  "provider_id": 99, "name": "Hoodie",              "tags": ["hoodie"],
-     "filters": {"color": ["Black", "White", "Navy", "Sport Grey", "Dark Heather", "Red"]}},
-    {"blueprint_id": 68,  "provider_id": 1,  "name": "11oz Mug",            "tags": ["mug", "coffee"],
-     "filters": {}},
-    {"blueprint_id": 282, "provider_id": 99, "name": "Matte Poster",        "tags": ["poster", "wall art"],
-     "filters": {"paper": ["Matte"], "size": ["11x14", "12x18", "16x20", "18x24", "24x36"]}},
-    {"blueprint_id": 421, "provider_id": 99, "name": "Tough Phone Case",    "tags": ["phone case"],
-     "filters": {"surface": ["Glossy"]}},
-    {"blueprint_id": 400, "provider_id": 99, "name": "Kiss-Cut Sticker",    "tags": ["sticker"],
-     "filters": {}}
+    {
+      "blueprint_id": 6,
+      "provider_id": 99,
+      "name": "Heavy Cotton Tee",
+      "tags": [
+        "t-shirt",
+        "tee"
+      ],
+      "filters": {
+        "color": [
+          "Black",
+          "White",
+          "Navy",
+          "Sport Grey",
+          "Dark Heather",
+          "Red",
+          "Forest Green",
+          "Sand"
+        ]
+      }
+    },
+    {
+      "blueprint_id": 12,
+      "provider_id": 99,
+      "name": "Premium Jersey Tee",
+      "tags": [
+        "t-shirt",
+        "tee"
+      ],
+      "filters": {
+        "color": [
+          "Black",
+          "White",
+          "Navy",
+          "Heather Grey",
+          "Athletic Heather",
+          "Red",
+          "Heather Navy"
+        ]
+      }
+    },
+    {
+      "blueprint_id": 49,
+      "provider_id": 99,
+      "name": "Crewneck Sweatshirt",
+      "tags": [
+        "sweatshirt"
+      ],
+      "filters": {
+        "color": [
+          "Black",
+          "White",
+          "Navy",
+          "Sport Grey",
+          "Dark Heather",
+          "Red"
+        ]
+      }
+    },
+    {
+      "blueprint_id": 77,
+      "provider_id": 99,
+      "name": "Hoodie",
+      "tags": [
+        "hoodie"
+      ],
+      "filters": {
+        "color": [
+          "Black",
+          "White",
+          "Navy",
+          "Sport Grey",
+          "Dark Heather",
+          "Red"
+        ]
+      }
+    },
+    {
+      "blueprint_id": 68,
+      "provider_id": 1,
+      "name": "11oz Mug",
+      "tags": [
+        "mug",
+        "coffee"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 282,
+      "provider_id": 99,
+      "name": "Matte Poster",
+      "tags": [
+        "poster",
+        "wall art"
+      ],
+      "filters": {
+        "paper": [
+          "Matte"
+        ],
+        "size": [
+          "11x14",
+          "12x18",
+          "16x20",
+          "18x24",
+          "24x36"
+        ]
+      }
+    },
+    {
+      "blueprint_id": 421,
+      "provider_id": 99,
+      "name": "Tough Phone Case",
+      "tags": [
+        "phone case"
+      ],
+      "filters": {
+        "surface": [
+          "Glossy"
+        ]
+      }
+    },
+    {
+      "blueprint_id": 400,
+      "provider_id": 99,
+      "name": "Kiss-Cut Sticker",
+      "tags": [
+        "sticker"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 1346,
+      "provider_id": 99,
+      "name": "Doormat",
+      "tags": [
+        "doormat",
+        "home decor"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 608,
+      "provider_id": 99,
+      "name": "Mouse Pad",
+      "tags": [
+        "mouse pad",
+        "desk"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 744,
+      "provider_id": 99,
+      "name": "Throw Blanket",
+      "tags": [
+        "blanket",
+        "home decor"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 428,
+      "provider_id": 99,
+      "name": "Magnet",
+      "tags": [
+        "magnet"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 553,
+      "provider_id": 34,
+      "name": "Cotton Tote Bag",
+      "tags": [
+        "tote bag"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 1667,
+      "provider_id": 72,
+      "name": "Coaster",
+      "tags": [
+        "coaster",
+        "home decor"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 809,
+      "provider_id": 72,
+      "name": "Square Pillow",
+      "tags": [
+        "pillow",
+        "home decor"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 353,
+      "provider_id": 1,
+      "name": "20oz Tumbler",
+      "tags": [
+        "tumbler"
+      ],
+      "filters": {}
+    },
+    {
+      "blueprint_id": 555,
+      "provider_id": 69,
+      "name": "Stretched Canvas",
+      "tags": [
+        "canvas",
+        "wall art"
+      ],
+      "filters": {}
+    }
   ]
 }

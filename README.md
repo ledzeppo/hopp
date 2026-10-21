@@ -1,8 +1,8 @@
 # hopp: bulk Printify products from a folder of PNGs
 
 Drop PNG designs into `designs/` and `printify_bulk.py` creates one Printify product per
-design for each blueprint in `config.json` (tees, sweatshirts, hoodie, mug, poster, phone
-case, sticker). Prices are 2x Printify's cost, rounded up to the next `$x.99`.
+design for each blueprint in `config.json` (2 tees, sweatshirt, hoodie, mug, tumbler, poster, canvas, phone
+case, sticker, magnet, doormat, mouse pad, blanket, pillow, coaster, tote). Prices are 2x Printify's cost, rounded up to the next `$x.99`.
 
 ## Setup
 1. Copy `.env.example` to `.env` and put your Printify token in it (`.env` is gitignored).

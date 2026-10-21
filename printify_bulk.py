@@ -143,6 +143,7 @@ def main():
         print(f"{p['name']}: {len(catalog[key])} variants")
 
     created = 0
+    failed = []
     for f in files:
         w, h = png_size(f)
         design = pretty(f.stem)
@@ -163,23 +164,28 @@ def main():
             if args.dry_run:
                 print(f"[dry-run] {title} ({len(variants)} variants)")
                 continue
-            areas = build_print_areas(variants, image_id, w, h)
-            used = [i for a in areas for i in a["variant_ids"]]
-            body = {
-                "title": title,
-                "description": cfg["description_template"].format(design=design, product=p["name"]),
-                "blueprint_id": p["blueprint_id"], "print_provider_id": p["provider_id"],
-                "tags": cfg["common_tags"] + p.get("tags", []) + [design],
-                "variants": [{"id": i, "price": 1999, "is_enabled": True} for i in used],
-                "print_areas": areas,
-            }
-            prod = call("POST", f"/shops/{shop_id}/products.json", body)
-            costs = {v["id"]: v.get("cost", 0) for v in prod["variants"]}
-            update = {"variants": [
-                {"id": i, "is_enabled": True,
-                 "price": price_for(costs.get(i, 0), cfg["price_multiplier"], cfg["price_ending_cents"])}
-                for i in used]}
-            call("PUT", f"/shops/{shop_id}/products/{prod['id']}.json", update)
+            try:
+                areas = build_print_areas(variants, image_id, w, h)
+                used = [i for a in areas for i in a["variant_ids"]]
+                body = {
+                    "title": title,
+                    "description": cfg["description_template"].format(design=design, product=p["name"]),
+                    "blueprint_id": p["blueprint_id"], "print_provider_id": p["provider_id"],
+                    "tags": cfg["common_tags"] + p.get("tags", []) + [design],
+                    "variants": [{"id": i, "price": 1999, "is_enabled": True} for i in used],
+                    "print_areas": areas,
+                }
+                prod = call("POST", f"/shops/{shop_id}/products.json", body)
+                costs = {v["id"]: v.get("cost", 0) for v in prod["variants"]}
+                update = {"variants": [
+                    {"id": i, "is_enabled": True,
+                     "price": price_for(costs.get(i, 0), cfg["price_multiplier"], cfg["price_ending_cents"])}
+                    for i in used]}
+                call("PUT", f"/shops/{shop_id}/products/{prod['id']}.json", update)
+            except Exception as e:
+                failed.append((title, str(e)))
+                print(f"FAILED {title}: {e}")
+                continue
             st["products"][skey] = {"id": prod["id"], "title": title, "published": False}
             save_state(st)
             created += 1
@@ -197,7 +203,9 @@ def main():
             save_state(st)
             print(f"Published {info['title']}")
             time.sleep(1)
-    print(f"Done. {created} product(s) created.")
+    print(f"Done. {created} product(s) created, {len(failed)} failed.")
+    for t, e in failed:
+        print(f"  - {t}: {e[:200]}")
 
 
 if __name__ == "__main__":
