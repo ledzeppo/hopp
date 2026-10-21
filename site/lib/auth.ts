@@ -22,6 +22,19 @@ export function checkPassword(pw: string): boolean {
   return !!process.env.APP_PASSWORD && safeEqual(pw, process.env.APP_PASSWORD);
 }
 
+/** Short-lived signed link so Printify can fetch a design without logging in. */
+export function signDownload(name: string, ttlSeconds = 900): string {
+  const exp = Math.floor(Date.now() / 1000) + ttlSeconds;
+  const sig = createHmac("sha256", process.env.APP_PASSWORD || "").update(`dl:${name}:${exp}`).digest("hex");
+  return `name=${encodeURIComponent(name)}&exp=${exp}&sig=${sig}`;
+}
+
+export function verifyDownload(name: string, exp: string, sig: string): boolean {
+  if (!process.env.APP_PASSWORD || !/^\d+$/.test(exp) || Number(exp) < Date.now() / 1000) return false;
+  const want = createHmac("sha256", process.env.APP_PASSWORD).update(`dl:${name}:${exp}`).digest("hex");
+  return safeEqual(sig, want);
+}
+
 export function sessionCookie(): string {
   return `${COOKIE}=${token()}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${60 * 60 * 24 * 30}`;
 }

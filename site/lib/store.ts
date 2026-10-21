@@ -1,14 +1,33 @@
-/** Storage: Vercel Blob in production, a local folder when BLOB_READ_WRITE_TOKEN is not set (dev/tests). */
+/** Storage: Vercel Blob in production (private or public store, detected automatically), a local folder otherwise. */
 import { promises as fs } from "fs";
 import path from "path";
-import { put, list, del } from "@vercel/blob";
+import { put, list, del, get } from "@vercel/blob";
 
-const useBlob = () => !!process.env.BLOB_READ_WRITE_TOKEN;
+export const useBlob = () => !!process.env.BLOB_READ_WRITE_TOKEN;
 const LOCAL = path.join(process.cwd(), ".data");
 
-export type DesignFile = { name: string; url?: string; size: number };
+export type DesignFile = { name: string; size: number };
+type Access = "private" | "public";
 
-const opts = { access: "public" as const, addRandomSuffix: false, allowOverwrite: true };
+let known: Access | undefined; // learned from the first call, then reused
+
+const isAccessMismatch = (e: any) => /access/i.test(String(e?.message)) && /store/i.test(String(e?.message));
+
+async function withAccess<T>(fn: (access: Access) => Promise<T>): Promise<T> {
+  const order: Access[] = known ? [known] : ["private", "public"];
+  let last: unknown;
+  for (const access of order) {
+    try {
+      const r = await fn(access);
+      known = access;
+      return r;
+    } catch (e) {
+      last = e;
+      if (!isAccessMismatch(e)) throw e;
+    }
+  }
+  throw last;
+}
 
 async function listAll(prefix: string) {
   const out: { pathname: string; url: string; size: number; uploadedAt: Date }[] = [];
@@ -21,15 +40,37 @@ async function listAll(prefix: string) {
   return out;
 }
 
-export async function putBytes(key: string, bytes: Buffer, contentType = "application/octet-stream"): Promise<string | undefined> {
-  if (useBlob()) return (await put(key, bytes, { ...opts, contentType })).url;
+async function readBlob(pathname: string, maxBytes?: number): Promise<Buffer | null> {
+  const r = await withAccess((access) => get(pathname, { access, useCache: false }));
+  if (!r || !r.stream) return null;
+  const reader = r.stream.getReader();
+  const chunks: Buffer[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(Buffer.from(value));
+    total += value.length;
+    if (maxBytes && total >= maxBytes) {
+      await reader.cancel();
+      break;
+    }
+  }
+  return Buffer.concat(chunks);
+}
+
+export async function putBytes(key: string, bytes: Buffer, contentType = "application/octet-stream"): Promise<void> {
+  if (useBlob()) {
+    await withAccess((access) => put(key, bytes, { access, addRandomSuffix: false, allowOverwrite: true, contentType }));
+    return;
+  }
   const f = path.join(LOCAL, key);
   await fs.mkdir(path.dirname(f), { recursive: true });
   await fs.writeFile(f, bytes);
 }
 
 export async function listKeys(prefix: string): Promise<DesignFile[]> {
-  if (useBlob()) return (await listAll(prefix)).map((b) => ({ name: b.pathname.slice(prefix.length), url: b.url, size: b.size }));
+  if (useBlob()) return (await listAll(prefix)).map((b) => ({ name: b.pathname.slice(prefix.length), size: b.size }));
   const dir = path.join(LOCAL, prefix);
   try {
     const names = await fs.readdir(dir);
@@ -40,22 +81,12 @@ export async function listKeys(prefix: string): Promise<DesignFile[]> {
 }
 
 export async function getBytes(key: string): Promise<Buffer | null> {
-  if (useBlob()) {
-    const hit = (await listAll(key)).find((b) => b.pathname === key);
-    if (!hit) return null;
-    const r = await fetch(hit.url + "?t=" + Date.now(), { cache: "no-store" });
-    return r.ok ? Buffer.from(await r.arrayBuffer()) : null;
-  }
+  if (useBlob()) return readBlob(key);
   try {
     return await fs.readFile(path.join(LOCAL, key));
   } catch {
     return null;
   }
-}
-
-export async function publicUrl(key: string): Promise<string | undefined> {
-  if (!useBlob()) return undefined;
-  return (await listAll(key)).find((b) => b.pathname === key)?.url;
 }
 
 export async function removeKeys(prefix: string): Promise<void> {
@@ -69,12 +100,11 @@ export async function removeKeys(prefix: string): Promise<void> {
 
 /** JSON documents are written under a new name each time (and the old ones removed), so reads are never stale. */
 export async function getJson<T>(name: string, fallback: T): Promise<T> {
-  const prefix = `state/${name}-`;
   if (useBlob()) {
-    const blobs = (await listAll(prefix)).sort((a, b) => +b.uploadedAt - +a.uploadedAt);
+    const blobs = (await listAll(`state/${name}-`)).sort((a, b) => +b.uploadedAt - +a.uploadedAt);
     if (!blobs.length) return fallback;
-    const r = await fetch(blobs[0].url, { cache: "no-store" });
-    return r.ok ? ((await r.json()) as T) : fallback;
+    const buf = await readBlob(blobs[0].pathname);
+    return buf ? (JSON.parse(buf.toString("utf8")) as T) : fallback;
   }
   try {
     return JSON.parse(await fs.readFile(path.join(LOCAL, `state/${name}.json`), "utf8")) as T;
@@ -87,8 +117,10 @@ export async function putJson(name: string, value: unknown): Promise<void> {
   const body = Buffer.from(JSON.stringify(value));
   if (useBlob()) {
     const old = await listAll(`state/${name}-`);
-    await put(`state/${name}-${Date.now()}.json`, body, { ...opts, addRandomSuffix: false, contentType: "application/json" });
-    if (old.length) await del(old.map((b) => b.url));
+    const key = `state/${name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.json`;
+    await putBytes(key, body, "application/json");
+    const stale = old.filter((b) => b.pathname !== key);
+    if (stale.length) await del(stale.map((b) => b.url));
   } else {
     await fs.mkdir(path.join(LOCAL, "state"), { recursive: true });
     await fs.writeFile(path.join(LOCAL, `state/${name}.json`), body);
@@ -97,9 +129,10 @@ export async function putJson(name: string, value: unknown): Promise<void> {
 
 /** First 32 bytes of a stored file (enough to read a PNG header). */
 export async function headOf(d: DesignFile, prefix: string): Promise<Buffer> {
-  if (d.url) {
-    const r = await fetch(d.url, { headers: { Range: "bytes=0-31" }, cache: "no-store" });
-    return Buffer.from(await r.arrayBuffer()).subarray(0, 32);
+  if (useBlob()) {
+    const b = await readBlob(prefix + d.name, 32);
+    if (!b) throw new Error("File not found");
+    return b.subarray(0, 32);
   }
   const fh = await fs.open(path.join(LOCAL, prefix, d.name), "r");
   try {

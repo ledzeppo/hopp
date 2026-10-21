@@ -113,6 +113,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const LIM = { title: 80, meta_title: 60, meta_description: 160 };
+let productsInitialised = false;
 let S = null, selDesigns = new Set(), selProducts = new Set(), review = [];
 
 function el(tag, attrs = {}, ...kids) {
@@ -138,8 +139,7 @@ async function refresh() {
   $('keys').replaceChildren(
     el('span', { class: 'pill ' + (S.printify_key ? 'ok' : 'bad'), textContent: 'Printify ' + (S.printify_key ? 'connected' : 'key missing') }), ' ',
     el('span', { class: 'pill ' + (S.anthropic_key ? 'ok' : 'bad'), textContent: 'AI ' + (S.anthropic_key ? 'ready' : 'key missing') }));
-  if (!selProducts.size && !S._init) { S.products.forEach(p => selProducts.add(p.blueprint_id)); }
-  S._init = true;
+  if (!productsInitialised) { S.products.forEach(p => selProducts.add(p.blueprint_id)); productsInitialised = true; }
   drawDesigns(); drawProducts(); drawItems(); estimate();
   if (S.printify_key) api('/api/check').then(r => {
     const pill = $('keys').firstChild;

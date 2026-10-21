@@ -1,7 +1,7 @@
-import { ApiError, guarded, json } from "../lib/auth";
+import { ApiError, guarded, json, signDownload } from "../lib/auth";
 import { config } from "../lib/config";
 import { createProduct, call, shopId, variantsFor } from "../lib/printify";
-import { getBytes, listKeys, headOf, publicUrl } from "../lib/store";
+import { getBytes, listKeys, headOf, useBlob } from "../lib/store";
 import { loadState, safeDesign, saveState } from "../lib/state";
 import { pngSize } from "../lib/png";
 
@@ -24,11 +24,21 @@ export const POST = guarded(async (req) => {
 
   let imageId = st.uploads[name]?.id;
   if (!imageId) {
-    const url = await publicUrl(`designs/${name}`);
-    const body = url
-      ? { file_name: name, url }
-      : { file_name: name, contents: (await getBytes(`designs/${name}`))!.toString("base64") };
-    imageId = (await call("POST", "/uploads/images.json", body)).id as string;
+    const host = req.headers.get("x-forwarded-host") || new URL(req.url).host;
+    const origin = `${req.headers.get("x-forwarded-proto") || "https"}://${host}`;
+    const canUseUrl = useBlob() && !/^(localhost|127\.)/.test(host);
+    const viaBase64 = async () => ({ file_name: name, contents: (await getBytes(`designs/${name}`))!.toString("base64") });
+    let up: any;
+    if (canUseUrl) {
+      try {
+        up = await call("POST", "/uploads/images.json", { file_name: name, url: `${origin}/api/dl?${signDownload(name)}` });
+      } catch {
+        up = await call("POST", "/uploads/images.json", await viaBase64());
+      }
+    } else {
+      up = await call("POST", "/uploads/images.json", await viaBase64());
+    }
+    imageId = up.id as string;
     st = await loadState();
     st.uploads[name] = { id: imageId };
     await saveState(st);
