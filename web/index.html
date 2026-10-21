@@ -130,6 +130,12 @@ async function refresh() {
   if (!selProducts.size && !S._init) { S.products.forEach(p => selProducts.add(p.blueprint_id)); }
   S._init = true;
   drawDesigns(); drawProducts(); drawItems(); estimate();
+  if (S.printify_key) api('/api/check').then(r => {
+    const pill = $('keys').firstChild;
+    pill.className = 'pill ' + (r.ok ? 'ok' : 'bad');
+    pill.textContent = r.ok ? 'Printify: ' + r.shop + (r.channel ? ' (' + r.channel + ')' : '') : 'Printify token rejected';
+    if (!r.ok) toast(r.error);
+  }).catch(() => {});
 }
 function drawDesigns() {
   $('designs').replaceChildren(...S.designs.map(d => {

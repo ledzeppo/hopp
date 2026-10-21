@@ -24,6 +24,15 @@ LOCK = threading.Lock()
 VARIANTS = {}  # (blueprint, provider) -> selected variants, cached per run
 
 
+def friendly(e):
+    msg = str(e)
+    if " 401" in msg or "->401" in msg or "Unauthenticated" in msg:
+        return "Printify rejected your token. Open Settings and paste a new one (create it with every permission ticked)."
+    if " 403" in msg:
+        return "Printify refused this action. Make a new token with every permission ticked and save it in Settings."
+    return msg[:600]
+
+
 class ApiError(Exception):
     def __init__(self, msg, code=400):
         super().__init__(msg)
@@ -96,6 +105,17 @@ def status():
         "products": [{"blueprint_id": p["blueprint_id"], "name": p["name"]} for p in c["products"]],
         "items": items,
     }
+
+
+def check():
+    """Ask Printify who we are, so a bad token shows up right away."""
+    try:
+        shops = pb.call("GET", "/shops.json", retries=1)
+    except Exception as e:
+        return {"ok": False, "error": friendly(e)}
+    if not shops:
+        return {"ok": False, "error": "Your Printify account has no shop yet."}
+    return {"ok": True, "shop": shops[0]["title"], "channel": shops[0].get("sales_channel", "")}
 
 
 def save_settings(d):
@@ -248,6 +268,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/api/status":
                 return self._send(200, status())
+            if path == "/api/check":
+                return self._send(200, check())
             if path.startswith("/thumb/"):
                 return self._send(200, thumb(path[7:]), "image/png")
             rel = "index.html" if path == "/" else path.lstrip("/")
@@ -258,7 +280,7 @@ class Handler(BaseHTTPRequestHandler):
         except ApiError as e:
             self._send(e.code, {"error": str(e)})
         except Exception as e:
-            self._send(500, {"error": str(e)})
+            self._send(500, {"error": friendly(e)})
 
     def do_POST(self):
         if not self._guard():
@@ -284,7 +306,7 @@ class Handler(BaseHTTPRequestHandler):
         except ApiError as e:
             self._send(e.code, {"error": str(e)})
         except Exception as e:
-            self._send(500, {"error": str(e)[:600]})
+            self._send(500, {"error": friendly(e)})
 
 
 def main():
