@@ -1,11 +1,11 @@
 # hopp: bulk Printify products from a folder of PNGs
 
 ## No Python needed: download the app
-Open the repository's **Actions** tab, click the latest "Build downloadable apps" run, and
-download **Hopp-Windows** (Hopp.exe) or **Hopp-Mac** (Hopp.command, zipped) from Artifacts.
-Double-click it; your browser opens. Windows shows a "protected your PC" warning the first time
-(More info, then Run anyway). On Mac, right-click the file and choose Open the first time. The app is for
-Apple Silicon Macs. Your designs, keys and settings are kept in a `Hopp` folder in your home folder.
+Open the repository's **Releases** page (right side of the repo's main page), open "Hopp (latest build)",
+and download **Hopp.exe** (Windows) or **Hopp-Mac.zip** (Apple Silicon Mac). On Mac, unzip it first.
+Double-click the app; your browser opens. Windows shows a "protected your PC" warning the first time
+(More info, then Run anyway). On Mac, right-click Hopp.command and choose Open the first time. Your designs,
+keys and settings are kept in a `Hopp` folder in your home folder.
 
 ## Easiest way from source: the web interface
 Windows: double-click `start.bat`. Mac: double-click `start.command` (first time: right-click, Open).

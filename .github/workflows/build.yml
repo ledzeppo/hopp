@@ -6,6 +6,9 @@ on:
     branches: [claude/magical-feynman-yqcccc]
     paths: ["*.py", "web/**", "config.json", "requirements.txt", ".github/workflows/build.yml"]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -36,7 +39,7 @@ jobs:
         run: |
           mv dist/Hopp dist/Hopp.command
           chmod +x dist/Hopp.command
-          ditto -c -k --keepParent dist/Hopp.command dist/Hopp-Mac.zip
+          cd dist && zip -X Hopp-Mac.zip Hopp.command
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Windows'
         with:
@@ -47,3 +50,24 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: dist/Hopp-Mac.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: files
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Hopp (latest build)
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          body: |
+            Download **Hopp.exe** (Windows) or **Hopp-Mac.zip** (Apple Silicon Mac), then double-click it.
+            Windows: More info, then Run anyway. Mac: unzip, then right-click Hopp.command and choose Open.
+          files: |
+            files/Hopp.exe
+            files/Hopp-Mac.zip
