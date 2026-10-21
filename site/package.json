@@ -1,0 +1,21 @@
+{
+  "name": "hopp-site",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "tsx dev.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.137.0",
+    "@vercel/blob": "^2.8.2",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

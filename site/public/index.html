@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hopp</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1c2230; --muted:#667085; --line:#e3e6ec; --accent:#2f5bea; --accent-ink:#fff; --ok:#12805c; --bad:#b42318; --warn:#9a6700; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#12151c; --card:#1a1f2a; --ink:#e8ebf2; --muted:#9aa3b5; --line:#2b3243; --accent:#6b8cff; --accent-ink:#0d1220; --ok:#4cc79a; --bad:#ff8a80; --warn:#e3b341; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--line); background:var(--card); }
+  header h1 { margin:0; font-size:18px; }
+  main { max-width:1100px; margin:0 auto; padding:24px 16px 80px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:20px; }
+  h2 { margin:0 0 4px; font-size:16px; } .sub { color:var(--muted); margin:0 0 14px; font-size:13px; }
+  button { font:inherit; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:7px 14px; border-radius:8px; cursor:pointer; }
+  button.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button.link { border:0; background:none; color:var(--accent); padding:0 6px; }
+  .drop { border:2px dashed var(--line); border-radius:10px; padding:22px; text-align:center; color:var(--muted); cursor:pointer; }
+  .drop.over { border-color:var(--accent); color:var(--accent); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:12px; margin-top:14px; }
+  .tile { border:2px solid var(--line); border-radius:10px; padding:6px; cursor:pointer; position:relative; background:repeating-conic-gradient(#d0d3d9 0 25%, #eceef2 0 50%) 50%/16px 16px; }
+  .tile.sel { border-color:var(--accent); }
+  .tile img { width:100%; aspect-ratio:1; object-fit:contain; display:block; }
+  .tile .cap { background:var(--card); font-size:12px; padding:4px 6px; margin:6px -6px -6px; border-radius:0 0 8px 8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tile .warn { color:var(--warn); }
+  .tile input { position:absolute; top:8px; left:8px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:5px 12px; cursor:pointer; user-select:none; }
+  .chip.sel { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px; }
+  .muted { color:var(--muted); font-size:13px; }
+  .pill { font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); }
+  .pill.ok { color:var(--ok); } .pill.bad { color:var(--bad); }
+  .design-head { display:flex; gap:12px; align-items:center; margin:18px 0 8px; }
+  .design-head img { width:56px; height:56px; object-fit:contain; border-radius:8px; border:1px solid var(--line); }
+  .card { border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px; }
+  .card.off { opacity:.5; }
+  .card label { display:block; font-size:12px; color:var(--muted); margin:8px 0 2px; }
+  .card input[type=text], .card textarea { width:100%; font:inherit; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
+  .card textarea { min-height:90px; font-size:13px; }
+  .count { float:right; } .count.over { color:var(--bad); }
+  table { width:100%; border-collapse:collapse; } th,td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); font-size:14px; }
+  th { color:var(--muted); font-weight:500; font-size:12px; }
+  dialog { border:1px solid var(--line); border-radius:12px; background:var(--card); color:var(--ink); padding:20px; max-width:440px; width:92%; }
+  dialog input { width:100%; padding:7px 9px; margin:4px 0 12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); font:inherit; }
+  #toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:8px; display:none; max-width:90%; }
+  .bar { height:8px; background:var(--line); border-radius:99px; overflow:hidden; margin-top:10px; } .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .2s; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hopp <span class="muted">· bulk Printify listings</span></h1>
+  <div><span id="keys"></span> <button onclick="openSettings()">Settings</button></div>
+</header>
+<main>
+  <section>
+    <h2>1. Designs</h2>
+    <p class="sub">Drop PNG files here. Large transparent PNGs (4000 px or more) print best. Tick the ones to use.</p>
+    <div class="drop" id="drop">Drop PNG files here or click to choose</div>
+    <input type="file" id="file" accept="image/png" multiple hidden>
+    <div class="grid" id="designs"></div>
+  </section>
+
+  <section>
+    <h2>2. Products</h2>
+    <p class="sub">Each ticked design is made on every ticked product. Prices are <span id="mult"></span>× Printify's cost.</p>
+    <div class="chips" id="products"></div>
+    <div class="row"><button onclick="setAll(true)">All</button><button onclick="setAll(false)">None</button>
+      <span class="muted" id="estimate"></span></div>
+  </section>
+
+  <section>
+    <h2>3. Write and review listings</h2>
+    <p class="sub">Claude looks at each design and writes the title, description, tags and SEO text. Edit anything before you continue.</p>
+    <div class="row" style="margin-top:0"><button class="primary" id="writeBtn" onclick="writeListings()">Write listings</button>
+      <span class="muted" id="writeNote"></span></div>
+    <div class="bar" id="writeBar" hidden><i></i></div>
+    <div id="review"></div>
+    <div class="row" id="createRow" hidden><button class="primary" id="createBtn" onclick="createDrafts()">Create drafts in Printify</button>
+      <span class="muted">Nothing goes live on Shopify yet.</span></div>
+    <div class="bar" id="createBar" hidden><i></i></div>
+  </section>
+
+  <section>
+    <h2>4. Drafts and publishing</h2>
+    <p class="sub">Check the mockups on <a href="https://printify.com/app/products" target="_blank" rel="noopener">printify.com</a>, then publish the ones you want on Shopify.</p>
+    <div id="items"></div>
+  </section>
+</main>
+
+<dialog id="settings">
+  <h2>Settings</h2>
+  <p class="sub">Your Printify and Anthropic keys, the password and the product list are set in Vercel, not on this page.</p>
+  <ul class="sub" style="padding-left:18px">
+    <li>Keys and password: Vercel project, Settings, Environment Variables (PRINTIFY_TOKEN, ANTHROPIC_API_KEY, APP_PASSWORD).</li>
+    <li>Products, prices and AI model: the <code>config.json</code> file in the <code>site</code> folder of the repository.</li>
+  </ul>
+  <div class="row" style="justify-content:flex-end"><button class="primary" onclick="settings.close()">Close</button></div>
+</dialog>
+<dialog id="login">
+  <h2>Log in</h2>
+  <p class="sub">Enter the app password.</p>
+  <form onsubmit="doLogin(event)">
+    <input id="pw" type="password" autocomplete="current-password" placeholder="Password" autofocus>
+    <div class="row" style="justify-content:flex-end"><button class="primary" type="submit">Log in</button></div>
+  </form>
+</dialog>
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const LIM = { title: 80, meta_title: 60, meta_description: 160 };
+let S = null, selDesigns = new Set(), selProducts = new Set(), review = [];
+
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else if (k === 'class') n.className = v; else n[k] = v;
+  }
+  for (const c of kids.flat()) n.append(c);
+  return n;
+}
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 5000); }
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'X-Hopp': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({ error: 'Bad response' }));
+  if (r.status === 401) { showLogin(); throw new Error('Please log in'); }
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+async function refresh() {
+  S = await api('/api/status');
+  $('mult').textContent = S.multiplier;
+  $('keys').replaceChildren(
+    el('span', { class: 'pill ' + (S.printify_key ? 'ok' : 'bad'), textContent: 'Printify ' + (S.printify_key ? 'connected' : 'key missing') }), ' ',
+    el('span', { class: 'pill ' + (S.anthropic_key ? 'ok' : 'bad'), textContent: 'AI ' + (S.anthropic_key ? 'ready' : 'key missing') }));
+  if (!selProducts.size && !S._init) { S.products.forEach(p => selProducts.add(p.blueprint_id)); }
+  S._init = true;
+  drawDesigns(); drawProducts(); drawItems(); estimate();
+  if (S.printify_key) api('/api/check').then(r => {
+    const pill = $('keys').firstChild;
+    pill.className = 'pill ' + (r.ok ? 'ok' : 'bad');
+    pill.textContent = r.ok ? 'Printify: ' + r.shop + (r.channel ? ' (' + r.channel + ')' : '') : 'Printify token rejected';
+    if (!r.ok) toast(r.error);
+  }).catch(() => {});
+}
+function drawDesigns() {
+  $('designs').replaceChildren(...S.designs.map(d => {
+    const t = el('div', { class: 'tile' + (selDesigns.has(d.name) ? ' sel' : ''), onclick: () => { selDesigns.has(d.name) ? selDesigns.delete(d.name) : selDesigns.add(d.name); drawDesigns(); estimate(); } },
+      el('input', { type: 'checkbox', checked: selDesigns.has(d.name), onclick: e => e.stopPropagation(), onchange: () => t.click() }),
+      el('img', { src: '/api/thumb?name=' + encodeURIComponent(d.name), loading: 'lazy' }),
+      el('div', { class: 'cap', title: d.name }, d.name, d.w < 2400 ? el('span', { class: 'warn', textContent: ' · low res' }) : ''));
+    return t;
+  }));
+  if (!S.designs.length) $('designs').replaceChildren(el('p', { class: 'muted', textContent: 'No designs yet.' }));
+}
+function drawProducts() {
+  $('products').replaceChildren(...S.products.map(p => el('div', { class: 'chip' + (selProducts.has(p.blueprint_id) ? ' sel' : ''), textContent: p.name,
+    onclick: () => { selProducts.has(p.blueprint_id) ? selProducts.delete(p.blueprint_id) : selProducts.add(p.blueprint_id); drawProducts(); estimate(); } })));
+}
+function setAll(on) { selProducts = new Set(on ? S.products.map(p => p.blueprint_id) : []); drawProducts(); estimate(); }
+function estimate() {
+  const n = selDesigns.size * selProducts.size;
+  $('estimate').textContent = n ? `${selDesigns.size} design(s) × ${selProducts.size} product(s) = ${n} listings` : '';
+}
+
+$('drop').onclick = () => $('file').click();
+$('file').onchange = e => upload([...e.target.files]);
+$('drop').ondragover = e => { e.preventDefault(); $('drop').classList.add('over'); };
+$('drop').ondragleave = () => $('drop').classList.remove('over');
+$('drop').ondrop = e => { e.preventDefault(); $('drop').classList.remove('over'); upload([...e.dataTransfer.files]); };
+async function upload(files) {
+  for (const f of files.filter(f => f.name.toLowerCase().endsWith('.png'))) {
+    try {
+      const id = Array.from(crypto.getRandomValues(new Uint8Array(10))).map(b => (b % 36).toString(36)).join('');
+      const size = 3.5 * 1024 * 1024, n = Math.max(1, Math.ceil(f.size / size));
+      for (let i = 0; i < n; i++) {
+        $('drop').textContent = `Uploading ${f.name} (${i + 1}/${n})…`;
+        const res = await fetch(`/api/upload?name=${encodeURIComponent(f.name)}&id=${id}&i=${i}&n=${n}`,
+          { method: 'POST', headers: { 'X-Hopp': '1' }, body: f.slice(i * size, (i + 1) * size) });
+        const j = await res.json().catch(() => ({ error: 'Bad response' }));
+        if (res.status === 401) { showLogin(); throw new Error('Please log in'); }
+        if (!res.ok) throw new Error(j.error);
+        if (j.done) selDesigns.add(j.name);
+      }
+    } catch (e) { toast(f.name + ': ' + e.message); }
+  }
+  $('drop').textContent = 'Drop PNG files here or click to choose';
+  await refresh();
+}
+
+function bar(id, done, total) { const b = $(id); b.hidden = false; b.firstChild.style.width = (100 * done / total) + '%'; }
+function made(design, bp) { return S.items.some(i => i.key === design + '|' + bp); }
+
+async function writeListings() {
+  const designs = [...selDesigns], bps = [...selProducts];
+  if (!designs.length || !bps.length) return toast('Tick at least one design and one product.');
+  if (S.ai_enabled && !S.anthropic_key) return toast('No Anthropic key yet. Add ANTHROPIC_API_KEY in Vercel (Settings, Environment Variables), redeploy, then try again.');
+  $('writeBtn').disabled = true; review = []; $('review').replaceChildren(); $('createRow').hidden = true;
+  let done = 0;
+  for (const d of designs) {
+    const todo = bps.filter(bp => !made(d, bp));
+    $('writeNote').textContent = `Writing for ${d} (${done + 1} of ${designs.length}). This takes a minute or two per design…`;
+    bar('writeBar', done, designs.length);
+    if (!todo.length) { done++; continue; }
+    try {
+      const r = await api('/api/copy', { design: d, blueprint_ids: todo });
+      review.push({ design: d, summary: r.summary, ai: r.ai, items: todo.map(bp => ({ ...r.copy[bp], blueprint_id: bp, on: true })) });
+    } catch (e) { toast(d + ': ' + e.message); }
+    done++; drawReview();
+  }
+  bar('writeBar', designs.length, designs.length);
+  $('writeNote').textContent = review.length ? (review[0].ai ? 'Done. Review and edit below.' : 'AI key missing, so plain templates were used. Add a key in Settings for SEO copy.') : 'Nothing to write (already created?).';
+  $('writeBtn').disabled = false; $('createRow').hidden = !review.length;
+}
+function field(label, obj, key, limit, multi) {
+  const inp = multi ? el('textarea') : el('input', { type: 'text' });
+  const val = key === 'tags' ? (obj.tags || []).join(', ') : obj[key] || '';
+  inp.value = val;
+  const cnt = el('span', { class: 'count' });
+  const upd = () => { obj[key] = inp.value; if (limit) { cnt.textContent = `${inp.value.length}/${limit}`; cnt.classList.toggle('over', inp.value.length > limit); } };
+  inp.addEventListener('input', upd); upd();
+  return [el('label', {}, label, cnt), inp];
+}
+function drawReview() {
+  $('review').replaceChildren(...review.flatMap(r => [
+    el('div', { class: 'design-head' }, el('img', { src: '/api/thumb?name=' + encodeURIComponent(r.design) }),
+      el('div', {}, el('strong', { textContent: r.design }), el('div', { class: 'muted', textContent: r.summary }))),
+    ...r.items.map(it => {
+      const name = S.products.find(p => p.blueprint_id === it.blueprint_id).name;
+      const card = el('div', { class: 'card' },
+        el('label', {}, el('input', { type: 'checkbox', checked: true, onchange: e => { it.on = e.target.checked; card.classList.toggle('off', !it.on); } }), ' ', el('strong', { textContent: name })),
+        ...field('Title', it, 'title', LIM.title), ...field('Meta description (Google snippet)', it, 'meta_description', LIM.meta_description),
+        ...field('Meta title', it, 'meta_title', LIM.meta_title), ...field('Tags (comma separated)', it, 'tags'),
+        ...field('Description (HTML)', it, 'description_html', 0, true));
+      return card;
+    })]));
+}
+async function createDrafts() {
+  const jobs = review.flatMap(r => r.items.filter(i => i.on).map(i => ({ design: r.design, item: { ...i, tags: typeof i.tags === 'string' ? i.tags : (i.tags || []).join(', ') } })));
+  if (!jobs.length) return toast('Nothing ticked.');
+  $('createBtn').disabled = true; let done = 0, failed = 0;
+  for (const j of jobs) {
+    bar('createBar', done, jobs.length);
+    $('createBtn').textContent = `Creating ${done + 1} of ${jobs.length}…`;
+    try { await api('/api/create', j); } catch (e) { failed++; toast(j.item.title + ': ' + e.message); }
+    done++;
+  }
+  bar('createBar', jobs.length, jobs.length);
+  $('createBtn').textContent = 'Create drafts in Printify'; $('createBtn').disabled = false;
+  toast(`Created ${jobs.length - failed} draft(s)` + (failed ? `, ${failed} failed` : ''));
+  review = []; $('review').replaceChildren(); $('createRow').hidden = true;
+  await refresh();
+}
+
+function drawItems() {
+  const rows = S.items;
+  if (!rows.length) return $('items').replaceChildren(el('p', { class: 'muted', textContent: 'Nothing created yet.' }));
+  const pending = rows.filter(i => !i.published);
+  $('items').replaceChildren(
+    el('div', { class: 'row', style: 'margin:0 0 10px' },
+      el('button', { class: 'primary', disabled: !pending.length, textContent: `Publish all ${pending.length} draft(s) to Shopify`, onclick: () => pubMany(pending) })),
+    el('table', {}, el('thead', {}, el('tr', {}, ...['Product', 'Design', 'Meta description', 'Status', ''].map(h => el('th', { textContent: h })))),
+      el('tbody', {}, ...rows.map(i => el('tr', {},
+        el('td', { textContent: i.title }), el('td', { textContent: i.design }),
+        el('td', { class: 'muted', textContent: i.meta_description || '' }),
+        el('td', {}, el('span', { class: 'pill ' + (i.published ? 'ok' : ''), textContent: i.published ? 'published' : 'draft' })),
+        el('td', {}, i.published ? '' : [el('button', { class: 'link', textContent: 'Publish', onclick: () => pubMany([i]) }),
+          el('button', { class: 'link', textContent: 'Delete', onclick: () => del(i) })]))))));
+}
+async function pubMany(list) {
+  if (!confirm(`Publish ${list.length} product(s) to your Shopify store? They will go live.`)) return;
+  let ok = 0;
+  for (const i of list) { try { await api('/api/publish', { key: i.key }); ok++; } catch (e) { toast(i.title + ': ' + e.message); } }
+  toast(`Published ${ok} of ${list.length}`); await refresh();
+}
+async function del(i) {
+  if (!confirm('Delete this draft from Printify?')) return;
+  try { await api('/api/delete', { key: i.key }); } catch (e) { toast(e.message); } await refresh();
+}
+function openSettings() { $('settings').showModal(); }
+function showLogin() { if (!$('login').open) { $('login').showModal(); $('pw').focus(); } }
+async function doLogin(e) {
+  e.preventDefault();
+  const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('pw').value }) });
+  if (r.ok) { $('login').close(); $('pw').value = ''; await refresh(); } else { toast('Wrong password'); }
+}
+refresh().catch(e => toast(e.message));
+</script>
+</body>
+</html>

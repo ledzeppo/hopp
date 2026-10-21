@@ -1,5 +1,17 @@
 # hopp: bulk Printify products from a folder of PNGs
 
+## Hosted version on Vercel (no installs)
+The `site/` folder is the same tool as a website. Open it from any browser behind one password.
+
+1. In Vercel: **Add New, Project**, import this GitHub repository, and set **Root Directory** to `site`.
+2. In the project's **Storage** tab, create a **Blob** store and connect it to the project (this stores your designs and progress).
+3. In **Settings, Environment Variables**, add `PRINTIFY_TOKEN`, `ANTHROPIC_API_KEY` and `APP_PASSWORD` (pick any password).
+4. In **Settings, Environments, Production**, set the branch to `claude/magical-feynman-yqcccc` (or merge the branch into `main`).
+5. Deploy, open the site, log in with `APP_PASSWORD`.
+
+Products, prices and the AI model are in `site/config.json`. Vercel's free Hobby plan is for non-commercial use, so a store that
+sells products needs the Pro plan. To try it on your computer: `cd site && npm install && APP_PASSWORD=x npx tsx --env-file=../.env dev.ts`.
+
 ## No Python needed: download the app
 Open the repository's **Releases** page (right side of the repo's main page), open "Hopp (latest build)",
 and download **Hopp.exe** (Windows) or **Hopp-Mac.zip** (Apple Silicon Mac). On Mac, unzip it first.
