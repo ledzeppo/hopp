@@ -106,6 +106,26 @@ def price_for(cost_cents, mult, ending):
     return dollars * 100 + ending
 
 
+def create_product(shop_id, cfg, p, variants, image_id, img_w, img_h, title, description, tags):
+    """Create one unpublished Printify product priced at cfg multiplier x cost; returns the product."""
+    areas = build_print_areas(variants, image_id, img_w, img_h)
+    used = [i for a in areas for i in a["variant_ids"]]
+    body = {
+        "title": title, "description": description, "tags": tags,
+        "blueprint_id": p["blueprint_id"], "print_provider_id": p["provider_id"],
+        "variants": [{"id": i, "price": 1999, "is_enabled": True} for i in used],
+        "print_areas": areas,
+    }
+    prod = call("POST", f"/shops/{shop_id}/products.json", body)
+    costs = {v["id"]: v.get("cost", 0) for v in prod["variants"]}
+    update = {"variants": [
+        {"id": i, "is_enabled": True,
+         "price": price_for(costs.get(i, 0), cfg["price_multiplier"], cfg["price_ending_cents"])}
+        for i in used]}
+    call("PUT", f"/shops/{shop_id}/products/{prod['id']}.json", update)
+    return prod
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--designs", default=str(ROOT / "designs"))
@@ -181,23 +201,9 @@ def main():
                 print(f"[dry-run] {title} ({len(variants)} variants)")
                 continue
             try:
-                areas = build_print_areas(variants, image_id, w, h)
-                used = [i for a in areas for i in a["variant_ids"]]
-                body = {
-                    "title": title,
-                    "description": c["description_html"] if c else cfg["description_template"].format(design=design, product=p["name"]),
-                    "blueprint_id": p["blueprint_id"], "print_provider_id": p["provider_id"],
-                    "tags": list(dict.fromkeys(cfg["common_tags"] + p.get("tags", []) + (c["tags"] if c else [design])))[:20],
-                    "variants": [{"id": i, "price": 1999, "is_enabled": True} for i in used],
-                    "print_areas": areas,
-                }
-                prod = call("POST", f"/shops/{shop_id}/products.json", body)
-                costs = {v["id"]: v.get("cost", 0) for v in prod["variants"]}
-                update = {"variants": [
-                    {"id": i, "is_enabled": True,
-                     "price": price_for(costs.get(i, 0), cfg["price_multiplier"], cfg["price_ending_cents"])}
-                    for i in used]}
-                call("PUT", f"/shops/{shop_id}/products/{prod['id']}.json", update)
+                desc = c["description_html"] if c else cfg["description_template"].format(design=design, product=p["name"])
+                tags = list(dict.fromkeys(cfg["common_tags"] + p.get("tags", []) + (c["tags"] if c else [design])))[:20]
+                prod = create_product(shop_id, cfg, p, variants, image_id, w, h, title, desc, tags)
             except Exception as e:
                 failed.append((title, str(e)))
                 print(f"FAILED {title}: {e}")

@@ -1,5 +1,15 @@
 # hopp: bulk Printify products from a folder of PNGs
 
+## Easiest way: the web interface
+Windows: double-click `start.bat`. Mac: double-click `start.command` (first time: right-click, Open).
+Linux: `./start.command`. Your browser opens at http://127.0.0.1:8765. You need Python 3.10+ installed.
+1. Click **Settings** and paste your Printify token and Anthropic key (saved only in `.env` on your computer).
+2. Drop in your PNG designs and tick the products you want.
+3. **Write listings** (Claude writes titles, descriptions, tags and SEO text; edit anything).
+4. **Create drafts in Printify**, check the mockups, then **Publish** the ones you want on Shopify.
+
+The page only listens on your own computer. The command-line tool below does the same job without the page.
+
 Drop PNG designs into `designs/` and `printify_bulk.py` creates one Printify product per
 design for each blueprint in `config.json` (2 tees, sweatshirt, hoodie, mug, tumbler, poster, canvas, phone
 case, sticker, magnet, doormat, mouse pad, blanket, pillow, coaster, tote). Prices are 2x Printify's cost, rounded up to the next `$x.99`.
